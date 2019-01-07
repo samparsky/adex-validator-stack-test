@@ -1,0 +1,25 @@
+{
+  "name": "adex-validator-stack-test",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/samparsky/adex-validator-stack-test.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/samparsky/adex-validator-stack-test/issues"
+  },
+  "homepage": "https://github.com/samparsky/adex-validator-stack-test#readme",
+  "devDependencies": {
+    "blue-tape": "^1.0.0"
+  }
+}
