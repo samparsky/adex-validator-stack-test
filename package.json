@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node test/sentry.js"
+    "test": "node test/entity.js"
   },
   "repository": {
     "type": "git",
