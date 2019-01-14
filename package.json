@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "node test/adapter.js"
+    "test": "node test/sentry.js"
   },
   "repository": {
     "type": "git",
@@ -20,6 +20,12 @@
   },
   "homepage": "https://github.com/samparsky/adex-validator-stack-test#readme",
   "devDependencies": {
-    "blue-tape": "^1.0.0"
+    "blue-tape": "^1.0.0",
+    "mongodb-memory-server": "^2.9.1",
+    "sinon": "^7.2.2",
+    "supertest": "^3.3.0"
+  },
+  "dependencies": {
+    "mongodb": "^3.1.10"
   }
 }

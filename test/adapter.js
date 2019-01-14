@@ -3,7 +3,7 @@ const { readFileSync }  = require('fs')
 const { catchErr } = require('./helper')
 const { ethereum: ethereumAdapter } = require("../stack/adapters");
 
-test("ethereum adapter - Init Adapter", async(t) => {
+test("ethereum adapter - Should init adapter", async(t) => {
     const actual = {}
 
     const opts = {
@@ -14,10 +14,14 @@ test("ethereum adapter - Init Adapter", async(t) => {
     const expected = readFileSync(opts.keystoreFile, "utf-8")
     
     await ethereumAdapter.init(opts)
-    t.pass("init adapter sucess")
+    t.pass("init ethereum adapter sucess")
 })
 
-test("ethereum adapter - unlock", async(t) => {
+test("ethereum adapter - Should fail to init adapter with empty opts", async(t) => {
+    
+})
+
+test("ethereum adapter - Should unlock keystore", async(t) => {
     const opts = {
         keystoreFile: "/Users/Samparsky/Sites/nodejs/adex-validator-stack-test/test/resources/keystore.json",
         keystorePwd: "adexvalidator"
@@ -25,10 +29,10 @@ test("ethereum adapter - unlock", async(t) => {
 
     await ethereumAdapter.init(opts)
     await ethereumAdapter.unlock(opts)
-    t.pass("unlock adapater success")
+    t.pass("unlock ethereum adapater success")
 })
 
-test("ethereum adapter - whoami", async(t) => {
+test("ethereum adapter - Should get whoami", async(t) => {
     const opts = {
         keystoreFile: "/Users/Samparsky/Sites/nodejs/adex-validator-stack-test/test/resources/keystore.json",
         keystorePwd: "adexvalidator"
@@ -43,7 +47,7 @@ test("ethereum adapter - whoami", async(t) => {
     t.equal(actual, expected)
 })
 
-test("ethereum adapter - sign", async(t) => {
+test("ethereum adapter - Should sign message", async(t) => {
     const opts = {
         keystoreFile: "/Users/Samparsky/Sites/nodejs/adex-validator-stack-test/test/resources/keystore.json",
         keystorePwd: "adexvalidator"
@@ -59,7 +63,7 @@ test("ethereum adapter - sign", async(t) => {
     t.equal(actual, expected)
 })
 
-test("ethereum adapter - getBalanceLeaf", async(t) => {
+test("ethereum adapter - Should getBalanceLeaf", async(t) => {
     const opts = {
         keystoreFile: "/Users/Samparsky/Sites/nodejs/adex-validator-stack-test/test/resources/keystore.json",
         keystorePwd: "adexvalidator"
