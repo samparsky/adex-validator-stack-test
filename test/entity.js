@@ -3,7 +3,7 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const { MongoClient } = require('mongodb')
 
 // const request = require("supertest");
-const sentry = require("../stack/bin/sentry")
+// const sentry = require("../stack/bin/sentry")
 // const worker = require("../stack/bin/validatorWorker")
 const util = require("util")
 const exec = util.promisify(require("child_process").exec)
@@ -20,7 +20,7 @@ const exitHandler =  () => {
 }
 
 // process.on('exit', exitHandler)
-process.on('SIGINT', exitHandler)
+// process.on('SIGINT', exitHandler)
 // const request = require("request")
 
 // const mongod = new MongoMemoryServer();
@@ -52,12 +52,12 @@ async function seedDatabase(id, uri, channel="awesomeTestChannel"){
     const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
     const db = mongoClient.db(id)
 
-    db.collection("sessions").insertOne({ _id: 'x8c9v1b2', uid: 'awesomeTestUser' })
+    await db.collection("sessions").insertOne({ _id: 'x8c9v1b2', uid: 'awesomeTestUser' })
 
-    db.collection("sessions").insertOne({ _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' })
-    db.collection("sessions").insertOne({ _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' })
+    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' })
+    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' })
 
-    db.collection("channels").insertOne({
+    await db.collection("channels").insertOne({
         // @TODO: document schema
         _id: channel,
         id: channel,
@@ -73,14 +73,57 @@ async function seedDatabase(id, uri, channel="awesomeTestChannel"){
             ]
         }
     })
+
+    // await mongoClient.close()
+
 }
 
-async function sendEvents(port, channel="awesomeTestChannel"){
-    const url = `http://localhost:${port}/channel/${channel}/events`
-    // const body = JSON.stringify({"events": [{"type": "IMPRESSION", "publisher": "myAwesomePublisher"}]})
-        const body = JSON.stringify({"events": [{"type": "CLICK", "publisher": "myAwesomePublisher"}]})
+async function dropDatabase(id, uri){
+    const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
+    const db = mongoClient.db(id)
 
-    // send to leader
+    await db.dropDatabase()
+    await mongoClient.close()
+}
+
+async function sendEvents(ports=[],publisher="myAwesomePublisher", channel="awesomeTestChannel", ){
+    Promise.all(
+        ports.map(async (port) => {
+            const url = `http://localhost:${port}/channel/${channel}/events`
+
+            const body = JSON.stringify({"events": [{"type": "IMPRESSION", "publisher": publisher}]})
+    
+            // send to leader
+            const response = await fetch(url, {
+                headers: {
+                    "authorization": "Bearer x8c9v1b2",
+                    "content-type": "application/json"
+                },
+                body,
+                method: "POST"
+            });
+        
+            console.log({response})
+        })
+    )
+}
+
+async function get(port, url) {
+    url =  `http://localhost:${port}/${url}`
+    const response = await fetch(url, {
+        headers: {
+            "content-type": "application/json"
+        },
+        method: "GET"
+    });
+    console.log({response})
+    return response.json()
+}
+
+async function post(port, url, body) {
+    url =  `http://localhost:${port}/${url}`
+    body = JSON.stringify(body)
+
     const response = await fetch(url, {
         headers: {
             "authorization": "Bearer x8c9v1b2",
@@ -91,12 +134,7 @@ async function sendEvents(port, channel="awesomeTestChannel"){
     });
 
     console.log({response})
-    
-    // send to follower
-
-    // curl -H 'Authorization: Bearer x8c9v1b2' -H 
-    // 'Content-Type: application/json' --data "$bodyJson" -X POST http://localhost:8006/channel/awesomeTestChannel/events
-
+    return response.json()
 }
 
 async function _setupSentry(id, dbUrl, port){
@@ -144,9 +182,6 @@ async function setupLeader(){
     // // setup work
     // await _setupWorker("awesomeLeader", "")
     // send messages
-    console.log("send messages") 
-    await sendEvents(port)
-
 
 
 }
@@ -163,8 +198,6 @@ async function setupFollower(){
     // // // setup work
     // await _setupWorker("awesomeFollower", "")
     console.log("send messages") 
-
-    await sendEvents(port)
 }
 
 // Working Scenarios
@@ -179,15 +212,102 @@ test("Should deposit into the channel", async(t) => {
 
 })
 
-test("Leader signs a valid state, followers should detect and sign", async(t) => {
-    // start leader
-    // start follower
-    await setupLeader();
-    await setupFollower();
+test("Leader signs a valid state, Followers should detect and sign", async(t) => {
+    const channel = "awesomeTestChannel"
+
+    // await seedDatabase("adexValidatorFollower")
+    // await seedDatabase("adexValidator")
+
+
+    const publishers = ["myAwesomePublisher", "myAwesomePublisher1", "myAwesomePublisher2"]
+    Promise.all(
+        publishers.map(
+            (publisher) => sendEvents([8005, 8006], publisher)
+        )
+    )
+    // get the channel status
+    const leaderStatus  = await get(8005, `channel/${channel}/status`)
+    const followerStatus = await get(8006, `channel/${channel}/status`)
+    console.log({leaderStatus})
+    console.log({followerStatus})
+
+    // check deposit amount
+    t.equal(leaderStatus.depositAmount, followerStatus.depositAmount, "Invalid channel details")
+    // check tree
+
+    const leaderTree = await get(8005, `channel/${channel}/tree`)
+    const followerTree = await get(8006, `channel/${channel}/tree`)
+    // t.equal(leaderTree.fo)
+    console.log({leaderTree})
+    console.log({followerTree})
+
+    publishers.map((publisher) => t.equal(leaderTree['balances'][publisher], '1', "failed to balance publisher"))
+
+    // check the follower database for validator messages
+    // await dropDatabase("adexValidatorFollower")
+    // await dropDatabase("adexValidator")
+
+})
+
+async function afterProducer(adapter, {channel, newStateTree, balances}) {
+	const followers = channel.spec.validators.slice(1)
+	// Note: MerkleTree takes care of deduplicating and sorting
+	const elems = Object.keys(balances).map(
+		acc => adapter.getBalanceLeaf(acc, balances[acc])
+	)
+	const tree = new adapter.MerkleTree(elems)
+	const stateRootRaw = tree.getRoot()
+	return adapter.sign(stateRootRaw)
+	.then(function(signature) {
+		const stateRoot = stateRootRaw.toString('hex')
+		return persistAndPropagate(adapter, followers, channel, {
+			type: 'NewState',
+			...newStateTree,
+			stateRoot,
+			signature,
+		})
+	})
+}
+
+test("Leader sends an incorrect new state, follower should mark channel unhealthy", async(t) => {
+    const channel = "awesomeTestChannel"
+    const publisher = "myAwesomePublisher"
+    sendEvents([8005, 8006], publisher)
+
+    const invalidState = { 
+        "type" : "NewState", 
+        "balances" : { 
+            "myAwesomePublisher" : "3", 
+            "myAwesomePublisher1" : "3", 
+            "myAwesomePublisher2" : "3" 
+        }, 
+        "lastEvAggr" : ISODate("2019-01-16T08:48:01.547Z"), 
+        "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+        "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+    }
+
+    const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
+    console.log({ followerPropagate })
+    // should mark the state unhealhy 
+    const followerStatus = await get(8006, `channel/${channel}/status`)
+    console.log({ followerStatus })
+    // validator-message
+})
+
+test("Leader sends an incorrect new state, follower should mark channel unhealthy", async(t) => {
+
+})
+
+test("Leader signs invalid state, follower should reject and not sign", async(t) => {
+
+})
+
+test("Leader signs an invalid transition, follower should reject", async(t) => {
+
 })
 
 test("Should send events to the setup", async(t) => {
-
+//propagate
 })
 
 // Attack Scenarios
