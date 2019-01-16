@@ -45,6 +45,10 @@ async function setupDb(dbName){
     return dbUrl
 }
 
+/**
+ * Use random seeded channels for each test
+ */
+
 async function seedDatabase(id, uri, channel="awesomeTestChannel"){
     console.log({id})
     console.log({uri})
@@ -73,9 +77,7 @@ async function seedDatabase(id, uri, channel="awesomeTestChannel"){
             ]
         }
     })
-
     // await mongoClient.close()
-
 }
 
 async function dropDatabase(id, uri){
