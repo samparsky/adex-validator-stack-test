@@ -200,18 +200,6 @@ async function setupFollower(){
     console.log("send messages") 
 }
 
-// Working Scenarios
-test("Should deposit into the channel", async(t) => {
-    // setup database
-    // seed database
-    // await setupLeader();
-    // await setupFollower();
-    // await sendMessages();
-
-    // confirm follower & leader received message
-
-})
-
 test("Leader signs a valid state, Followers should detect and sign", async(t) => {
     const channel = "awesomeTestChannel"
 
@@ -281,7 +269,7 @@ test("Leader sends an incorrect new state, follower should mark channel unhealth
             "myAwesomePublisher1" : "3", 
             "myAwesomePublisher2" : "3" 
         }, 
-        "lastEvAggr" : ISODate("2019-01-16T08:48:01.547Z"), 
+        "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
         "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
         "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
     }
@@ -294,23 +282,53 @@ test("Leader sends an incorrect new state, follower should mark channel unhealth
     // validator-message
 })
 
-test("Leader sends an incorrect new state, follower should mark channel unhealthy", async(t) => {
+// Doesnt work as should
+test("Leader sends a new state with invalid signature, follower should reject", async(t) => {
 
 })
 
-test("Leader signs invalid state, follower should reject and not sign", async(t) => {
+// DOS attack vector
+test("Leader sends an incorrect type of state, follower should reject", async(t) => {
+    const channel = "awesomeTestChannel"
+    const publisher = "myAwesomePublisher"
+    sendEvents([8005, 8006], publisher)
+
+    const invalidState = { 
+        "type" : "PowerRun", 
+        "balances" : { 
+            "myAwesomePublisher" : "3", 
+            "myAwesomePublisher1" : "3", 
+            "myAwesomePublisher2" : "3" 
+        }, 
+        "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+        "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+        "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+    }
+
+    const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
+    console.log({ followerPropagate })
 
 })
 
-test("Leader signs an invalid transition, follower should reject", async(t) => {
+// deposit amount is less than 
+test("Leader sends an invalid state, follower should reject", async(t) => {
+    const channel = "awesomeTestChannel"
+    const publisher = "myAwesomePublisher"
+    sendEvents([8005, 8006], publisher)
 
-})
+    const invalidState = { 
+        "type" : "NewSstate", 
+        "balances" : { 
+            "myAwesomePublisher" : "1000", 
+            "myAwesomePublisher1" : "3", 
+            "myAwesomePublisher2" : "3" 
+        }, 
+        "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+        "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+        "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+    }
 
-test("Should send events to the setup", async(t) => {
-//propagate
-})
-
-// Attack Scenarios
-test("", async(t) => {
+    const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
+    console.log({ followerPropagate })
 
 })

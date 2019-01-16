@@ -20,9 +20,6 @@ async function tryCatch(promise, message) {
 
 
 module.exports = { 
-    catchRevert: async function(promise) {
-        await tryCatch(promise, "revert");
-    },
     catchErr: async function(promise) {
         await tryCatch(promise, "");
     }
