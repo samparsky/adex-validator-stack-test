@@ -270,24 +270,23 @@ async function setupFollower(){
 // })
 test("Leader sends an unhealthy new state, follower should mark channel unhealthy 1", async(t) => {
     const channel = Math.random().toString(36).substring(2, 15) 
-    // await seedDatabase("adexValidatorFollower")
-    // await seedDatabase("adexValidator")
+    await seedDatabase("adexValidatorFollower")
+    await seedDatabase("adexValidator")
 
     await seedChannel("adexValidator", null, channel)
     await seedChannel("adexValidatorFollower", null, channel)
 
     const publisher = "a1"
 
-    sendEvents([8005, 8006], publisher, channel)
-    sendEvents([8005, 8006], publisher, channel)
-    sendEvents([8005], publisher, channel)
-    sendEvents([8005], publisher, channel)
-    sendEvents([8005], publisher, channel)
-    sendEvents([8005], publisher, channel)
-    sendEvents([8005], publisher, channel)
+    await sendEvents([8005, 8006], publisher, channel)
+    await sendEvents([8005, 8006], publisher, channel)
+    
+    await sendEvents([8006], publisher, channel)
+    await sendEvents([8006], publisher, channel)
+    await sendEvents([8006], publisher, channel)
+    await sendEvents([8006], publisher, channel)
+    await sendEvents([8006], publisher, channel)
 
-    // time to allow the validate worker 
-    // to wake up
     await sleep(50000)
 
     // get the last validator message from follower
@@ -297,7 +296,7 @@ test("Leader sends an unhealthy new state, follower should mark channel unhealth
         )
 
     console.log({ followerMessage })
-    t.equal(followerMessage['messages'][0]['msg']['health'], "UNHEALTHY", "Failed to mark channel unhealthy")
+    t.equal(followerMessage['messages'][0]['msg']['health'], "UNHEALTHY", "Mark channel unhealthy")
 
 })
 
