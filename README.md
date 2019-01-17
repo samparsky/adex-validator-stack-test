@@ -1,0 +1,1 @@
+Integration test implementation for Adex Validator Network

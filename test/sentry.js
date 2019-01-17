@@ -6,6 +6,7 @@ const request = require("supertest");
 const mongod = new MongoMemoryServer();
 let uri = mongod.getConnectionString();
 console.log({uri})
+
 // before(async ()=>{
 //     const uri = await mongod.getConnectionString();
 //     process.env.DB_MONGO_URL = uri

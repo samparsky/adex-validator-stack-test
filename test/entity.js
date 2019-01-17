@@ -45,21 +45,11 @@ async function setupDb(dbName){
     return dbUrl
 }
 
-/**
- * Use random seeded channels for each test
- */
 
-async function seedDatabase(id, uri, channel="awesomeTestChannel"){
-    console.log({id})
-    console.log({uri})
-    
+
+async function seedChannel(id, uri, channel="awesomeTestChannel") {
     const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
     const db = mongoClient.db(id)
-
-    await db.collection("sessions").insertOne({ _id: 'x8c9v1b2', uid: 'awesomeTestUser' })
-
-    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' })
-    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' })
 
     await db.collection("channels").insertOne({
         // @TODO: document schema
@@ -77,18 +67,33 @@ async function seedDatabase(id, uri, channel="awesomeTestChannel"){
             ]
         }
     })
-    // await mongoClient.close()
 }
 
-async function dropDatabase(id, uri){
+/**
+ * Use random seeded channels for each test
+ */
+
+async function seedDatabase(id, uri){
     const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
     const db = mongoClient.db(id)
 
-    await db.dropDatabase()
-    await mongoClient.close()
+    await db.collection("sessions").insertOne({ _id: 'x8c9v1b2', uid: 'awesomeTestUser' })
+
+    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' })
+    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' })
+
+    // await mongoClient.close()
 }
 
-async function sendEvents(ports=[],publisher="myAwesomePublisher", channel="awesomeTestChannel", ){
+async function drop(id, uri, collection="sessions"){
+    const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
+    const db = mongoClient.db(id)
+
+    await db.collection(collection).drop()
+    // await mongoClient.close()
+}
+
+async function sendEvents(ports=[], publisher="myAwesomePublisher", channel="awesomeTestChannel", ){
     Promise.all(
         ports.map(async (port) => {
             const url = `http://localhost:${port}/channel/${channel}/events`
@@ -118,17 +123,17 @@ async function get(port, url) {
         },
         method: "GET"
     });
-    console.log({response})
+    // console.log({response})
     return response.json()
 }
 
-async function post(port, url, body) {
+async function post(port, url, body, authorization="Bearer x8c9v1b2") {
     url =  `http://localhost:${port}/${url}`
     body = JSON.stringify(body)
 
     const response = await fetch(url, {
         headers: {
-            "authorization": "Bearer x8c9v1b2",
+            authorization,
             "content-type": "application/json"
         },
         body,
@@ -202,135 +207,260 @@ async function setupFollower(){
     console.log("send messages") 
 }
 
-test("Leader signs a valid state, Followers should detect and sign", async(t) => {
-    const channel = "awesomeTestChannel"
+// test("Leader signs a valid state, Followers should detect and sign", async(t) => {
+//     const channel = Math.random().toString(36).substring(2, 15) 
 
+//     // await seedDatabase("adexValidatorFollower")
+//     // await seedDatabase("adexValidator")
+//     await seedChannel("adexValidator", null, channel)
+//     await seedChannel("adexValidatorFollower", null, channel)
+
+//     const publishers = ["myAwesomePublisher", "myAwesomePublisher1", "myAwesomePublisher2"]
+
+//     Promise.all(
+//         publishers.map(
+//             (publisher) => sendEvents([8005, 8006], publisher, channel)
+//         )
+//     )
+//     // get the channel status
+//     const leaderStatus  = await get(8005, `channel/${channel}/status`)
+//     const followerStatus = await get(8006, `channel/${channel}/status`)
+//     // console.log({leaderStatus})
+//     // console.log({followerStatus})
+
+//     // check deposit amount
+//     await t.equal(leaderStatus.depositAmount, followerStatus.depositAmount)
+//     // check tree
+
+//     // sleep for 3 seconds 
+//     // to allow validateworker to produce state
+//     await sleep(30000)
+
+//     const leaderTree = await get(8005, `channel/${channel}/tree`)
+//     const followerTree = await get(8006, `channel/${channel}/tree`)
+//     // t.equal(leaderTree.fo)
+//     // console.log({leaderTree})
+//     // console.log({followerTree})
+
+//     // confirm the tree
+//     Promise.all(
+//         publishers.map(
+//             (publisher) => t.equal(
+//                             leaderTree['balances'][publisher], 
+//                             '1', 
+//                             "publisher balance"
+//                         )
+//         )
+//     )
+
+//     // confirm tree
+//     Promise.all(
+//         publishers.map(
+//             (publisher) => t.equal(
+//                             followerTree['balances'][publisher], 
+//                             '1', 
+//                             "publisher balance"
+//                         )
+//         )
+//     )
+
+//     // delete sessions details
+//     // await drop("adexValidatorFollower")
+//     // await drop("adexValidator")
+// })
+test("Leader sends an unhealthy new state, follower should mark channel unhealthy 1", async(t) => {
+    const channel = Math.random().toString(36).substring(2, 15) 
     // await seedDatabase("adexValidatorFollower")
     // await seedDatabase("adexValidator")
 
+    await seedChannel("adexValidator", null, channel)
+    await seedChannel("adexValidatorFollower", null, channel)
 
-    const publishers = ["myAwesomePublisher", "myAwesomePublisher1", "myAwesomePublisher2"]
-    Promise.all(
-        publishers.map(
-            (publisher) => sendEvents([8005, 8006], publisher)
+    const publisher = "a1"
+
+    sendEvents([8005, 8006], publisher, channel)
+    sendEvents([8005, 8006], publisher, channel)
+    sendEvents([8005], publisher, channel)
+    sendEvents([8005], publisher, channel)
+    sendEvents([8005], publisher, channel)
+    sendEvents([8005], publisher, channel)
+    sendEvents([8005], publisher, channel)
+
+    // time to allow the validate worker 
+    // to wake up
+    await sleep(50000)
+
+    // get the last validator message from follower
+    let followerMessage = await get(
+        8006, 
+        `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
         )
-    )
-    // get the channel status
-    const leaderStatus  = await get(8005, `channel/${channel}/status`)
-    const followerStatus = await get(8006, `channel/${channel}/status`)
-    console.log({leaderStatus})
-    console.log({followerStatus})
 
-    // check deposit amount
-    t.equal(leaderStatus.depositAmount, followerStatus.depositAmount, "Invalid channel details")
-    // check tree
-
-    const leaderTree = await get(8005, `channel/${channel}/tree`)
-    const followerTree = await get(8006, `channel/${channel}/tree`)
-    // t.equal(leaderTree.fo)
-    console.log({leaderTree})
-    console.log({followerTree})
-
-    publishers.map((publisher) => t.equal(leaderTree['balances'][publisher], '1', "failed to balance publisher"))
-
-    // check the follower database for validator messages
-    // await dropDatabase("adexValidatorFollower")
-    // await dropDatabase("adexValidator")
+    console.log({ followerMessage })
+    t.equal(followerMessage['messages'][0]['msg']['health'], "UNHEALTHY", "Failed to mark channel unhealthy")
 
 })
 
-async function afterProducer(adapter, {channel, newStateTree, balances}) {
-	const followers = channel.spec.validators.slice(1)
-	// Note: MerkleTree takes care of deduplicating and sorting
-	const elems = Object.keys(balances).map(
-		acc => adapter.getBalanceLeaf(acc, balances[acc])
-	)
-	const tree = new adapter.MerkleTree(elems)
-	const stateRootRaw = tree.getRoot()
-	return adapter.sign(stateRootRaw)
-	.then(function(signature) {
-		const stateRoot = stateRootRaw.toString('hex')
-		return persistAndPropagate(adapter, followers, channel, {
-			type: 'NewState',
-			...newStateTree,
-			stateRoot,
-			signature,
-		})
-	})
-}
+// test("Leader sends an unhealthy new state, follower should mark channel unhealthy 2", async(t) => {
+//     const channel = Math.random().toString(36).substring(2, 15) 
+    
+//     // await seedDatabase("adexValidatorFollower")
+//     // await seedDatabase("adexValidator") 
+    
+//     await seedChannel("adexValidator", null, channel)
+//     await seedChannel("adexValidatorFollower", null, channel)
 
-test("Leader sends an incorrect new state, follower should mark channel unhealthy", async(t) => {
-    const channel = "awesomeTestChannel"
-    const publisher = "myAwesomePublisher"
-    sendEvents([8005, 8006], publisher)
 
-    const invalidState = { 
-        "type" : "NewState", 
-        "balances" : { 
-            "myAwesomePublisher" : "3", 
-            "myAwesomePublisher1" : "3", 
-            "myAwesomePublisher2" : "3" 
-        }, 
-        "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
-        "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
-        "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
-    }
+//     const publisher = "a1"
 
-    const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
-    console.log({ followerPropagate })
-    // should mark the state unhealhy 
-    const followerStatus = await get(8006, `channel/${channel}/status`)
-    console.log({ followerStatus })
-    // validator-message
-})
+//     // sendEvents([8005, 8006], publisher, channel)
 
-// Doesnt work as should
-test("Leader sends a new state with invalid signature, follower should reject", async(t) => {
+//     // master message
+//     let invalidState = {
+//         "messages": [
+//             { 
+//                 "type" : "NewState", 
+//                 "balances" : { 
+//                     "a1" : 10,
+//                 }, 
+//                 "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+//                 "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+//                 "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+//             }
+//         ]
+//     }
 
-})
+//     let followerPropagate = await post(
+//                                 8006, 
+//                                 `channel/${channel}/validator-messages`, 
+//                                 invalidState,
+//                                 "Bearer AUTH_awesomeLeader"
+//                             )
 
-// DOS attack vector
-test("Leader sends an incorrect type of state, follower should reject", async(t) => {
-    const channel = "awesomeTestChannel"
-    const publisher = "myAwesomePublisher"
-    sendEvents([8005, 8006], publisher)
+//     console.log({ followerPropagate })
 
-    const invalidState = { 
-        "type" : "PowerRun", 
-        "balances" : { 
-            "myAwesomePublisher" : "3", 
-            "myAwesomePublisher1" : "3", 
-            "myAwesomePublisher2" : "3" 
-        }, 
-        "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
-        "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
-        "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
-    }
+//     // sleep 3 seconds
+//     await sleep(10000)
 
-    const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
-    console.log({ followerPropagate })
+//     // should mark the state unhealhy 
+//     let followerStatus = await get(8006, `channel/${channel}/status`)
+//     console.log(JSON.stringify(followerStatus))
+//     let followerTree = await get(8006, `channel/${channel}/tree`)
+//     console.log(JSON.stringify(followerTree))
 
-})
+//     invalidState = {
+//         "messages": [
+//             { 
+//                 "type" : "NewState", 
+//                 "balances" : { 
+//                     "a1" : 50,
+//                 }, 
+//                 "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+//                 "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+//                 "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+//             }
+//         ]
+//     }
 
-// deposit amount is less than 
-test("Leader sends an invalid state, follower should reject", async(t) => {
-    const channel = "awesomeTestChannel"
-    const publisher = "myAwesomePublisher"
-    sendEvents([8005, 8006], publisher)
+//     followerPropagate = await post(
+//         8006, 
+//         `channel/${channel}/validator-messages`, 
+//         invalidState,
+//         "Bearer AUTH_awesomeLeader"
+//     )
+//     console.log("2")
+//     await sleep(10000)
 
-    const invalidState = { 
-        "type" : "NewSstate", 
-        "balances" : { 
-            "myAwesomePublisher" : "1000", 
-            "myAwesomePublisher1" : "3", 
-            "myAwesomePublisher2" : "3" 
-        }, 
-        "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
-        "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
-        "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
-    }
+//     // should mark the state unhealhy 
+//     followerStatus = await get(8006, `channel/${channel}/status`)
+//     console.log(JSON.stringify(followerStatus))
+//     followerTree = await get(8006, `channel/${channel}/tree`)
+//     console.log(JSON.stringify(followerTree))
 
-    const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
-    console.log({ followerPropagate })
 
-})
+//     invalidState = {
+//         "messages": [
+//             { 
+//                 "type" : "NewState", 
+//                 "balances" : { 
+//                     "a1" : 5,
+//                 }, 
+//                 "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+//                 "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+//                 "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+//             }
+//         ]
+//     }
+
+//     followerPropagate = await post(
+//         8006, 
+//         `channel/${channel}/validator-messages`, 
+//         invalidState,
+//         "Bearer AUTH_awesomeLeader"
+//     )
+
+//     console.log("3")
+//     await sleep(10000)
+
+//     // should mark the state unhealhy 
+//     followerStatus = await get(8006, `channel/${channel}/status`)
+//     console.log(JSON.stringify(followerStatus))
+//     followerTree = await get(8006, `channel/${channel}/tree`)
+//     console.log(JSON.stringify(followerTree))
+
+
+
+
+//     // validator-message
+// })
+
+// // Doesnt work as should
+// test("Leader sends a new state with invalid signature, follower should reject", async(t) => {
+
+// })
+
+// // DOS attack vector
+// test("Leader sends an incorrect type of state, follower should reject", async(t) => {
+//     const channel = "awesomeTestChannel"
+//     const publisher = "myAwesomePublisher"
+//     sendEvents([8005, 8006], publisher)
+
+//     const invalidState = { 
+//         "type" : "PowerRun", 
+//         "balances" : { 
+//             "myAwesomePublisher" : "3", 
+//             "myAwesomePublisher1" : "3", 
+//             "myAwesomePublisher2" : "3" 
+//         }, 
+//         "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+//         "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+//         "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+//     }
+
+//     const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
+//     console.log({ followerPropagate })
+
+// })
+
+// // deposit amount is less than 
+// test("Leader sends an invalid state, follower should reject", async(t) => {
+//     const channel = "awesomeTestChannel"
+//     const publisher = "myAwesomePublisher"
+//     sendEvents([8005, 8006], publisher)
+
+//     const invalidState = { 
+//         "type" : "NewSstate", 
+//         "balances" : { 
+//             "myAwesomePublisher" : "1000", 
+//             "myAwesomePublisher1" : "3", 
+//             "myAwesomePublisher2" : "3" 
+//         }, 
+//         "lastEvAggr" : "2019-01-16T08:48:01.547Z", 
+//         "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
+//         "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 
+//     }
+
+//     const followerPropagate = await post(8006, `channel/${channel}/validator-messages`, invalidState)
+//     console.log({ followerPropagate })
+
+// })
