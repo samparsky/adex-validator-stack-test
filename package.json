@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha test/*.js"
+    "test": "mocha test/entity.test.js"
   },
   "repository": {
     "type": "git",
@@ -20,11 +20,9 @@
   },
   "homepage": "https://github.com/samparsky/adex-validator-stack-test#readme",
   "devDependencies": {
-    "blue-tape": "^1.0.0",
     "mocha": "^5.2.0",
     "mongodb-memory-server": "^2.9.1",
-    "sinon": "^7.2.2",
-    "supertest": "^3.3.0"
+    "sinon": "^7.2.2"
   },
   "dependencies": {
     "chai": "^4.2.0",

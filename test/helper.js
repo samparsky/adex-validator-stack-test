@@ -5,6 +5,8 @@ const { spawn, fork } = require("child_process")
 const { MongoMemoryServer } = require("mongodb-memory-server");
 const { MongoClient } = require('mongodb')
 
+let mongoClient = null
+
 async function tryCatch(promise, message) {
     try {
         await promise;
@@ -47,14 +49,6 @@ async function setupDb(dbName){
     dbUrl = await mongod.getConnectionString();
     console.log({ dbUrl })
     return dbUrl
-}
-
-async function drop(id, uri, collection="sessions"){
-    const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
-    const db = mongoClient.db(id)
-
-    await db.collection(collection).drop()
-    // await mongoClient.close()
 }
 
 async function get(port, url) {
@@ -107,8 +101,24 @@ async function sendEvents(ports=[], publisher="myAwesomePublisher", channel="awe
     )
 }
 
-async function seedChannel(id, uri, channel="awesomeTestChannel") {
-    const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
+async function drop(id, drop=false){
+    const mongoClient = await connectDB()
+    const db = mongoClient.db(id)
+
+    await db.dropDatabase();
+
+    console.log("closing")
+    if(drop) {
+        console.log("closed")
+        mongoClient.close(true)
+        mongoClient = null
+    }
+    
+}
+
+async function seedChannel(id, channel="awesomeTestChannel") {
+    const mongoClient = await connectDB()
+
     const db = mongoClient.db(id)
 
     await db.collection("channels").insertOne({
@@ -129,14 +139,29 @@ async function seedChannel(id, uri, channel="awesomeTestChannel") {
     })
 }
 
-async function seedDatabase(id, uri){
-    const mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { useNewUrlParser: true })
+async function connectDB(uri){
+    if(mongoClient){
+        console.log("reusing connection")
+        return mongoClient
+    }
+    console.log("connectin")
+
+    mongoClient = await MongoClient.connect(uri || 'mongodb://localhost:27017', { 
+        useNewUrlParser: true,
+    })
+    return mongoClient;
+}
+
+async function seedDatabase(id){
+    const mongoClient = await connectDB()
     const db = mongoClient.db(id)
 
     await db.collection("sessions").insertOne({ _id: 'x8c9v1b2', uid: 'awesomeTestUser' })
 
     await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' })
     await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' })
+
+    return mongoClient;
 }
 
 async function _setupSentry(id, dbUrl, port){
@@ -202,6 +227,8 @@ async function setupFollower(){
     console.log("send messages") 
 }
 
+const randString = () => Math.random().toString(36).substring(2, 15) 
+
 
 module.exports = { 
     catchErr: async function(promise) {
@@ -213,5 +240,8 @@ module.exports = {
     seedChannel,
     seedDatabase,
     exitHandler,
-    
+    sleep,
+    randString,
+    drop,
+    connectDB,
 }
