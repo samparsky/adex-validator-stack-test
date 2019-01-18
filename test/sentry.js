@@ -3,19 +3,18 @@ const { MongoMemoryServer } = require("mongodb-memory-server");
 const app = require("../stack/bin/sentry")
 const request = require("supertest");
 
-const mongod = new MongoMemoryServer();
-let uri = mongod.getConnectionString();
-console.log({uri})
+before(() => {
+    await seedDatabase("adexValidator")
+    await seedDatabase("adexValidatorFollower")
+})
 
-// before(async ()=>{
-//     const uri = await mongod.getConnectionString();
-//     process.env.DB_MONGO_URL = uri
-// })
+after(() => {
+    await drop("adexValidator")
+    await drop("adexValidatorFollower")
+})
 
 // DB_MONGO_URL
 test("Sentry - Get Channel Info", async(t)=>{
-    uri = await uri
-    process.env.DB_MONGO_URL = uri
     // set Mongo db  url
     request(app).get("/channel/list").end((err, res)=> {
         // console.log({ err })
