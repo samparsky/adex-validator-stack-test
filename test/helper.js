@@ -34,11 +34,17 @@ async function post(port, url, body, authorization="Bearer x8c9v1b2") {
     return response.json()
 }
 
-async function sendEvents(ports=[], publisher="myAwesomePublisher", channel="awesomeTestChannel", ){
-    ports.forEach(async (port) => {
+async function sendEvents(
+    ports=[], 
+    publisher="myAwesomePublisher", 
+    channel="awesomeTestChannel") {
+        
+    for (const port of ports) {
         const url = `http://localhost:${port}/channel/${channel}/events`
 
-        const body = JSON.stringify({"events": [{"type": "IMPRESSION", "publisher": publisher}]})
+        const body = JSON.stringify(
+            {"events": [{"type": "IMPRESSION", "publisher": publisher}]}
+        )
         // send to leader
         await fetch(url, {
             headers: {
@@ -48,7 +54,7 @@ async function sendEvents(ports=[], publisher="myAwesomePublisher", channel="awe
             body,
             method: "POST"
         });    
-    })
+    }
 }
 
 async function drop(id, drop=false){
@@ -108,10 +114,23 @@ async function seedDatabase(id){
     const mongoClient = await connectDB()
     const db = mongoClient.db(id)
 
-    await db.collection("sessions").update({ _id: 'x8c9v1b2'}, { _id: 'x8c9v1b2', uid: 'awesomeTestUser' },  {upsert: true})
+    await db.collection("sessions").update(
+        { _id: 'x8c9v1b2'}, 
+        { _id: 'x8c9v1b2', uid: 'awesomeTestUser' },  
+        {upsert: true}
+    )
 
-    await db.collection("sessions").update({ _id: 'AUTH_awesomeLeader'}, { _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' }, {upsert: true})
-    await db.collection("sessions").update({ _id: 'AUTH_awesomeFollower'}, { _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' }, {upsert: true})
+    await db.collection("sessions").update(
+        { _id: 'AUTH_awesomeLeader'}, 
+        { _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' }, 
+        {upsert: true}
+    )
+
+    await db.collection("sessions").update(
+        { _id: 'AUTH_awesomeFollower'}, 
+        { _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' }, 
+        {upsert: true}
+    )
 
     return mongoClient;
 }

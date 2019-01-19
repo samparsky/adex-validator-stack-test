@@ -11,6 +11,7 @@ Integration test implementation for Adex Validator Network
 ## RUN TEST (Docker)
 
 Run tests against docker validator stack setup
+Setup Docker
 ```bash
 $ cd adex-validator-stack-js
 $ npm install
