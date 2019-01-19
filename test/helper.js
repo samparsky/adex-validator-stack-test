@@ -116,7 +116,11 @@ async function seedDatabase(id){
     return mongoClient;
 }
 
-const randString = () => Math.random().toString(36).substring(2, 15) 
+const randString       = () => Math.random().toString(36).substring(2, 15) 
+const leaderPort       = process.env.LEADER_PORT || 8005
+const followerPort     = process.env.FOLLOWER_PORT || 8006
+const leaderDatabase   = process.env.LEADER_DATABASE || "adexValidator" 
+const followerDatabase = process.env.FOLLOWER_DATABASE || "adexValidatorFollower"
 
 
 module.exports = { 
@@ -128,4 +132,8 @@ module.exports = {
     sleep,
     randString,
     drop,
+    leaderPort,
+    followerPort,
+    leaderDatabase,
+    followerDatabase,
 }

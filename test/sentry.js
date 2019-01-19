@@ -5,28 +5,29 @@ const {
     post,
     seedDatabase,
     drop,
+    leaderPort,
+    followerPort,
+    leaderDatabase,
+    followerDatabase,
 } = require('./helper')
 const assert = require("assert")
 
 
 let channel = randString()
 before(async () => {
-    await seedDatabase("adexValidator")
-    await seedDatabase("adexValidatorFollower")
+    await seedDatabase(leaderDatabase)
+    await seedDatabase(followerDatabase)
 
-    await seedChannel("adexValidator", channel)
-    await seedChannel("adexValidatorFollower", channel)
+    await seedChannel(leaderDatabase, channel)
+    await seedChannel(followerDatabase, channel)
 })
 
 after(async () => {
-    await drop("adexValidator")
-    await drop("adexValidatorFollower", true)
+    await drop(leaderDatabase)
+    await drop(followerDatabase, true)
 })
 
 describe("Sentry", () => {
-
-    const followerPort = process.env.FOLLOWER_PORT || 8006    
-    const leaderPort   = process.env.LEADER_PORT || 8005
 
     it("Should get channel info", async() => {
 

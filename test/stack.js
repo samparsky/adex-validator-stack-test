@@ -5,28 +5,33 @@ const {
     seedChannel, 
     seedDatabase, 
     drop,
-    sleep 
+    sleep,
+    randString,
+    leaderPort,
+    followerPort,
+    leaderDatabase,
+    followerDatabase,
 } = require('./helper')
 
 const assert = require("assert")
 
 before( async () => {
-    await seedDatabase("adexValidator")
-    await seedDatabase("adexValidatorFollower")
+    await seedDatabase(leaderDatabase)
+    await seedDatabase(followerDatabase)
 })
 
 after( async () => {
-    await drop("adexValidator")
-    await drop("adexValidatorFollower", true)
+    await drop(leaderDatabase)
+    await drop(followerDatabase, true)
 })
 
 describe("Validator Stack", () => {
 
     it("Leader signs a valid state, Followers should detect and sign", async() => {
-        const channel = Math.random().toString(36).substring(2, 15) 
+        const channel = randString()
     
-        await seedChannel("adexValidator", channel)
-        await seedChannel("adexValidatorFollower", channel)
+        await seedChannel(leaderDatabase, channel)
+        await seedChannel(followerDatabase, channel)
     
         const publishers = [
             "myAwesomePublisher", 
@@ -36,13 +41,14 @@ describe("Validator Stack", () => {
 
         Promise.all(
             publishers.map(
-                async (publisher) => await sendEvents([8005, 8006], publisher, channel)
+                async (publisher) => await sendEvents([leaderPort, followerPort], 
+                                            publisher, channel)
             )
         )
     
         // get the channel status
-        const leaderStatus   = await get(8005, `channel/${channel}/status`)
-        const followerStatus = await get(8006, `channel/${channel}/status`)
+        const leaderStatus   = await get(leaderPort, `channel/${channel}/status`)
+        const followerStatus = await get(followerPort, `channel/${channel}/status`)
     
         // check deposit amount
         assert.deepEqual(leaderStatus, followerStatus)
@@ -51,8 +57,8 @@ describe("Validator Stack", () => {
         // to allow validateworker to produce state
         await sleep(50000)
     
-        const leaderTree   = await get(8005, `channel/${channel}/tree`)
-        const followerTree = await get(8006, `channel/${channel}/tree`)
+        const leaderTree   = await get(leaderPort, `channel/${channel}/tree`)
+        const followerTree = await get(followerPort, `channel/${channel}/tree`)
 
         delete leaderTree['lastEvAggr']
         delete followerTree['lastEvAggr']
@@ -61,7 +67,7 @@ describe("Validator Stack", () => {
 
          // get the last validator message from follower
         let followerMessage = await get(
-            8006, 
+            followerPort, 
             `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
             )
     
@@ -72,22 +78,24 @@ describe("Validator Stack", () => {
     })
     
     it("Leader sends an unhealthy new state, follower should mark channel unhealthy", async() => {
-        const channel = Math.random().toString(36).substring(2, 15) 
+        const channel = randString()
     
-        await seedChannel("adexValidator", channel)
-        await seedChannel("adexValidatorFollower", channel)
+        await seedChannel(leaderDatabase, channel)
+        await seedChannel(followerDatabase, channel)
     
         const publisher = "a1"
     
-        await sendEvents([8005, 8006], publisher, channel)
-        await sendEvents([8005, 8006], publisher, channel)
-    
-        await sendEvents([8006], publisher, channel)
-        await sendEvents([8006], publisher, channel)
-        await sendEvents([8006], publisher, channel)
-        await sendEvents([8006], publisher, channel)
-        await sendEvents([8006], publisher, channel)
-    
+        await sendEvents([followerPort, leaderPort], publisher, channel)
+        
+        // send events to the follower
+        // setup only
+        let i = 5
+        while(i != 0){
+            await sendEvents([followerPort], publisher, channel)
+            i -= 1
+        }
+
+        // wait till state is produced
         await sleep(50000)
     
         // get the last validator message from follower
@@ -104,14 +112,14 @@ describe("Validator Stack", () => {
     
     // DOS attack vector
     it("Leader sends an invalid type of state, follower should reject", async() => {
-        const channel = Math.random().toString(36).substring(2, 15) 
+        const channel = randString()
     
-        await seedChannel("adexValidator", channel)
-        await seedChannel("adexValidatorFollower", channel)
+        await seedChannel(leaderDatabase, channel)
+        await seedChannel(followerDatabase, channel)
     
         const publisher = "a1"
     
-        await sendEvents([8005, 8006], publisher, channel)
+        await sendEvents([leaderPort, followerPort], publisher, channel)
     
         // allow event to be proccessed
         await sleep(50000)
@@ -131,7 +139,7 @@ describe("Validator Stack", () => {
     
         // propagate to follower
         await post(
-            8006, 
+            followerPort, 
             `channel/${channel}/validator-messages`, 
             invalidState, 
             "Bearer AUTH_awesomeLeader" )
@@ -140,7 +148,7 @@ describe("Validator Stack", () => {
         // the last stored new state message
         // should have balance 1
         let followerMessage = await get(
-            8006, 
+            followerPort, 
             `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
             )
             
