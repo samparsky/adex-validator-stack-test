@@ -1,3 +1,3 @@
-[submodule "stack"]
-	path = stack
+[submodule "adex-validator-stack-js"]
+	path = adex-validator-stack-js
 	url = git@github.com:AdExNetwork/adex-validator-stack-js.git
