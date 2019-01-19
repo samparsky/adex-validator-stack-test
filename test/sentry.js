@@ -1,4 +1,3 @@
-const request = require("supertest");
 const {
     randString,
     seedChannel,
@@ -11,9 +10,6 @@ const {
 } = require('./helper')
 
 const assert = require("assert")
-
-const leader   = "adexValidator"
-const follower = "adexValidatorFollower"
 
 let channel = randString()
 

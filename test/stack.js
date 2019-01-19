@@ -9,77 +9,75 @@ const {
     sleep 
 } = require('./helper')
 
-before(async()=> {
-    console.log("entity")
+const assert = require("assert")
+
+before( async () => {
+    console.log("entity1")
+
     await seedDatabase("adexValidator")
     await seedDatabase("adexValidatorFollower")
 })
 
-after(async() => {
-    console.log("entity")
+after( async () => {
+    console.log("entity2")
 
     await drop("adexValidator")
-    await drop("adexValidatorFollower")
+    await drop("adexValidatorFollower", true)
 })
 
 describe("Validator Stack", () => {
-    it("Leader signs a valid state, Followers should detect and sign", async(t) => {
+
+    it("Leader signs a valid state, Followers should detect and sign", async() => {
         const channel = Math.random().toString(36).substring(2, 15) 
     
         await seedChannel("adexValidator", channel)
         await seedChannel("adexValidatorFollower", channel)
     
         const publishers = ["myAwesomePublisher", "myAwesomePublisher1", "myAwesomePublisher2"]
-    
+
         Promise.all(
             publishers.map(
-                (publisher) => sendEvents([8005, 8006], publisher, channel)
+                async (publisher) => await sendEvents([8005, 8006], publisher, channel)
             )
         )
+    
+
         // get the channel status
-        const leaderStatus  = await get(8005, `channel/${channel}/status`)
+        const leaderStatus   = await get(8005, `channel/${channel}/status`)
         const followerStatus = await get(8006, `channel/${channel}/status`)
-        // console.log({leaderStatus})
-        // console.log({followerStatus})
     
         // check deposit amount
-        await t.equal(leaderStatus.depositAmount, followerStatus.depositAmount)
-        // check tree
+        assert.equal(leaderStatus.depositAmount, followerStatus.depositAmount)
     
         // sleep for 3 seconds 
         // to allow validateworker to produce state
         await sleep(30000)
     
-        const leaderTree = await get(8005, `channel/${channel}/tree`)
+        const leaderTree   = await get(8005, `channel/${channel}/tree`)
         const followerTree = await get(8006, `channel/${channel}/tree`)
-        // t.equal(leaderTree.fo)
-        // console.log({leaderTree})
-        // console.log({followerTree})
     
         // confirm the tree
-        Promise.all(
-            publishers.map(
-                (publisher) => t.equal(
-                                leaderTree['balances'][publisher], 
-                                '1', 
-                                "publisher balance"
-                            )
-            )
+        publishers.forEach(
+            (publisher) => assert.equal(
+                            leaderTree['balances'][publisher], 
+                            '1', 
+                            "publisher balance"
+                        )
         )
-    
+        console.log({ followerTree })
+        console.log({ leaderTree })
         // confirm tree
-        Promise.all(
-            publishers.map(
-                (publisher) => t.equal(
-                                followerTree['balances'][publisher], 
-                                '1', 
-                                "publisher balance"
-                            )
-            )
+        publishers.forEach(
+            (publisher) => assert.equal(
+                            followerTree['balances'][publisher], 
+                            '1', 
+                            "publisher balance"
+                        )
         )
+        
     })
     
-    it("Leader sends an unhealthy new state, follower should mark channel unhealthy", async(t) => {
+    it("Leader sends an unhealthy new state, follower should mark channel unhealthy", async() => {
         const channel = Math.random().toString(36).substring(2, 15) 
     
         await seedChannel("adexValidator", channel)
@@ -105,12 +103,12 @@ describe("Validator Stack", () => {
             )
     
         console.log({ followerMessage })
-        t.equal(followerMessage['messages'][0]['msg']['health'], "UNHEALTHY", "Mark channel unhealthy")
+        assert.equal(followerMessage['messages'][0]['msg']['health'], "UNHEALTHY", "Mark channel unhealthy")
     
     })
     
     // DOS attack vector
-    it("Leader sends an invalid type of state, follower should reject", async(t) => {
+    it("Leader sends an invalid type of state, follower should reject", async() => {
         const channel = Math.random().toString(36).substring(2, 15) 
     
         await seedChannel("adexValidator", channel)
@@ -155,11 +153,15 @@ describe("Validator Stack", () => {
         
         console.log({followerMessage})
     
-        t.notEqual(followerMessage['messages'][0]['msg']['stateRoot'], stateRoot, "Ignore invalid state transition")
+        assert.notEqual(
+            followerMessage['messages'][0]['msg']['stateRoot'], 
+            stateRoot, 
+            "Ignore invalid state transition"
+        )
     })
     
     // DOS Attack Vector
-    it("Leader sends invalid messages to follower", async(t) => {
+    it("Leader sends invalid messages to follower", async() => {
     
     })
 })

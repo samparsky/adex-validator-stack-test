@@ -76,29 +76,27 @@ async function post(port, url, body, authorization="Bearer x8c9v1b2") {
         method: "POST"
     });
 
-    console.log({response})
+    // console.log({response})
     return response.json()
 }
 
 async function sendEvents(ports=[], publisher="myAwesomePublisher", channel="awesomeTestChannel", ){
-    Promise.all(
-        ports.map(async (port) => {
-            const url = `http://localhost:${port}/channel/${channel}/events`
+    ports.forEach(async (port) => {
+        const url = `http://localhost:${port}/channel/${channel}/events`
 
-            const body = JSON.stringify({"events": [{"type": "IMPRESSION", "publisher": publisher}]})
-            // send to leader
-            const response = await fetch(url, {
-                headers: {
-                    "authorization": "Bearer x8c9v1b2",
-                    "content-type": "application/json"
-                },
-                body,
-                method: "POST"
-            });
-        
-            console.log({response})
-        })
-    )
+        const body = JSON.stringify({"events": [{"type": "IMPRESSION", "publisher": publisher}]})
+        // send to leader
+        const response = await fetch(url, {
+            headers: {
+                "authorization": "Bearer x8c9v1b2",
+                "content-type": "application/json"
+            },
+            body,
+            method: "POST"
+        });
+    
+        // console.log({response})
+    })
 }
 
 async function drop(id, drop=false){
@@ -111,7 +109,6 @@ async function drop(id, drop=false){
     if(drop) {
         console.log("closed")
         mongoClient.close(true)
-        mongoClient = null
     }
     
 }
@@ -156,10 +153,10 @@ async function seedDatabase(id){
     const mongoClient = await connectDB()
     const db = mongoClient.db(id)
 
-    await db.collection("sessions").insertOne({ _id: 'x8c9v1b2', uid: 'awesomeTestUser' })
+    await db.collection("sessions").update({ _id: 'x8c9v1b2'}, { _id: 'x8c9v1b2', uid: 'awesomeTestUser' },  {upsert: true})
 
-    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' })
-    await db.collection("sessions").insertOne({ _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' })
+    await db.collection("sessions").update({ _id: 'AUTH_awesomeLeader'}, { _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' }, {upsert: true})
+    await db.collection("sessions").update({ _id: 'AUTH_awesomeFollower'}, { _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' }, {upsert: true})
 
     return mongoClient;
 }

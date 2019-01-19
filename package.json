@@ -7,7 +7,7 @@
     "test": "test"
   },
   "scripts": {
-    "test": "mocha test/entity.test.js"
+    "test": "mocha -t 60000 test/*.js"
   },
   "repository": {
     "type": "git",
