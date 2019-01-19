@@ -11,15 +11,11 @@ const {
 const assert = require("assert")
 
 before( async () => {
-    console.log("entity1")
-
     await seedDatabase("adexValidator")
     await seedDatabase("adexValidatorFollower")
 })
 
 after( async () => {
-    console.log("entity2")
-
     await drop("adexValidator")
     await drop("adexValidatorFollower", true)
 })
@@ -28,7 +24,6 @@ describe("Validator Stack", () => {
 
     it("Leader signs a valid state, Followers should detect and sign", async() => {
         const channel = Math.random().toString(36).substring(2, 15) 
-        console.log({ channel })
     
         await seedChannel("adexValidator", channel)
         await seedChannel("adexValidatorFollower", channel)
@@ -70,7 +65,6 @@ describe("Validator Stack", () => {
             `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
             )
     
-        console.log({ followerMessage })
         assert.equal(
             followerMessage['messages'][0]['msg']['health'], 
             "HEALTHY", "Mark channel unhealthy" )
@@ -102,7 +96,6 @@ describe("Validator Stack", () => {
             `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
             )
     
-        console.log({ followerMessage })
         assert.equal(
             followerMessage['messages'][0]['msg']['health'], 
             "UNHEALTHY", "Mark channel unhealthy" )
@@ -137,14 +130,12 @@ describe("Validator Stack", () => {
         }
     
         // propagate to follower
-        const followerPropagate = await post(
+        await post(
             8006, 
             `channel/${channel}/validator-messages`, 
             invalidState, 
             "Bearer AUTH_awesomeLeader" )
-    
-        console.log({ followerPropagate })
-    
+        
         // get the last validator message from follower
         // the last stored new state message
         // should have balance 1
@@ -152,19 +143,12 @@ describe("Validator Stack", () => {
             8006, 
             `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
             )
-        
-        console.log({followerMessage})
-    
+            
         assert.notEqual(
             followerMessage['messages'][0]['msg']['stateRoot'], 
             stateRoot, 
             "Should ignore invalid state transition"
         )
-    })
-    
-    // DOS Attack Vector
-    it("Leader sends invalid messages to follower", async() => {
-    
     })
 
 })

@@ -15,7 +15,6 @@ async function get(port, url) {
         },
         method: "GET"
     });
-    // console.log({response})
     return response.json()
 }
 
@@ -53,16 +52,15 @@ async function sendEvents(ports=[], publisher="myAwesomePublisher", channel="awe
 }
 
 async function drop(id, drop=false){
-    const mongoClient = await connectDB()
+    if(!mongoClient) return
+    // const mongoClient = await connectDB()
     const db = mongoClient.db(id)
 
     await db.dropDatabase();
-
-    console.log("closing")
     // drop mongodb connection for test to exit
     if(drop) {
-        console.log("closed")
         mongoClient.close(true)
+        mongoClient = null
     }
     
 }
@@ -95,12 +93,10 @@ async function seedChannel(id, channel="awesomeTestChannel") {
 
 async function connectDB(){
     if(mongoClient){
-        console.log("reusing connection")
         return mongoClient
     }
 
     const uri = process.env.MONGODB_URL || 'mongodb://localhost:27017'
-    console.log({uri})
 
     mongoClient = await MongoClient.connect(uri, { 
         useNewUrlParser: true,

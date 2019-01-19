@@ -126,19 +126,4 @@ describe("Ethereum Adapter", () => {
 
         assert.equal(actual, expected)
     })
-    
-    it("Should get sessionFromToken", async() => {
-        const opts = {
-            keystoreFile: `${__dirname}/resources/keystore.json`,
-            keystorePwd: "adexvalidator"
-        }
-    
-        await ethereumAdapter.init(opts)
-    
-        const token = "x8c9v1b2"
-    
-        const sessionFromToken = await ethereumAdapter.sessionFromToken(token)
-    
-        console.log({ sessionFromToken })
-    })
 })
