@@ -1,6 +1,4 @@
-const test = require("blue-tape");
 const { readFileSync }  = require('fs')
-const { catchErr } = require('./helper')
 const assert = require("assert")
 const { ethereum: ethereumAdapter } = require("../stack/adapters");
 

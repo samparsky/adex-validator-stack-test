@@ -1,13 +1,21 @@
 Integration test implementation for Adex Validator Network
 
-## RUN
+## RUN TEST (Docker)
 
-Setup the follower and leader using docker compose
-
+Run tests against docker setup validator stack
 ```bash
+$ git clone https://github.com/AdExNetwork/adex-validator-stack-js.git
+$ cd adex-validator-stack-js
 $ docker-compose up
 ```
 
 ```bash
-$ npm test
+$ MONGODB_URL=mongodb://localhost:28000 npm test
+```
+
+### RUN TEST (Local machine)
+Run tests against local setup validator stack
+
+```bash
+$ NOT_DOCKER=true npm test
 ```
