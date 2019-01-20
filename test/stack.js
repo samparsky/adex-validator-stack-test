@@ -107,10 +107,8 @@ describe("Validator Stack", () => {
         assert.equal(
             followerMessage['messages'][0]['msg']['health'], 
             "UNHEALTHY", "Mark channel unhealthy" )
-    
     })
     
-    // DOS attack vector
     it("Leader sends an invalid type of state, follower should reject", async() => {
         const channel = randString()
     
@@ -158,5 +156,66 @@ describe("Validator Stack", () => {
             "Should ignore invalid state transition"
         )
     })
+
+    it(`Leader sends an unhealthy new state, follower should mark 
+        channel unhealthy and after sends a healthy new state, 
+        follower should mark channel healthy`, async () => {
+
+        const channel = randString()
+    
+        await seedChannel(leaderDatabase, channel)
+        await seedChannel(followerDatabase, channel)
+    
+        const publisher = "a1"
+    
+        await sendEvents([followerPort, leaderPort], publisher, channel)
+        
+        // send events to the follower
+        // setup only
+        let i = 5
+        while(i != 0){
+            await sendEvents([followerPort], publisher, channel)
+            i -= 1
+        }
+
+        // wait till state is produced
+        await sleep(50000)
+    
+        // get the last validator message from follower
+        let followerMessage = await get(
+            8006, 
+            `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+            )
+    
+        assert.equal(
+            followerMessage['messages'][0]['msg']['health'], 
+            "UNHEALTHY", "Mark channel unhealthy" )
+        
+        // send new events to both follower & leader setup
+        await sendEvents([followerPort, leaderPort], publisher, channel)
+
+        i = 5
+        while(i != 0){
+            await sendEvents([leaderPort], publisher, channel)
+            i -= 1
+        }
+
+        // wait till state is produced
+        await sleep(50000)
+
+        // get the last validator message from follower
+        followerMessage = await get(
+        8006,
+        `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+        )
+    
+        assert.equal(
+            followerMessage['messages'][0]['msg']['health'], 
+            "HEALTHY", "Mark channel healthy" )
+
+
+    })
+    
+
 
 })
