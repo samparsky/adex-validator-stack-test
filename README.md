@@ -1,13 +1,14 @@
 Integration test implementation for Adex Validator Network
 
 ## Configuration
-
+The following can be overridden via environment variables
 - MONGODB_URL (for docker default =(MONGODB_URL=mongodb://localhost:28000))
 - LEADER_DATABASE (default = "adexValidator")
 - FOLLOWER_DATABASE (default= "adexValidatorFollower")
 - LEADER_PORT (default=8005)
 - FOLLOWER_PORT (default=8006)
 - FOLLOWER_IDENTITY (default="awesomeFollower")
+- LEADER_IDENTITY (default="awesomeLeader")
 
 ## RUN TEST (Docker)
 
