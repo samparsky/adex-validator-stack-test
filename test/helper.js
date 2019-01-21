@@ -87,11 +87,11 @@ async function seedChannel(id, channel="awesomeTestChannel") {
         // @TODO: ERC20 addr
         depositAsset: 'DAI',
         depositAmount: 1000,
-        validators: ['awesomeLeader', 'awesomeFollower'],
+        validators: [`${leaderIdentity}`, `${followerIdentity}`],
         spec: {
             validators: [
-                { id: 'awesomeLeader', url: `http://${uri}:8005` },
-                { id: 'awesomeFollower', url: `http://${uri}:8006` },
+                { id: `${leaderIdentity}`, url: `http://${uri}:${leaderPort}` },
+                { id: `${followerIdentity}`, url: `http://${uri}:${followerPort}` },
             ]
         }
     })
@@ -121,14 +121,14 @@ async function seedDatabase(id){
     )
 
     await db.collection("sessions").update(
-        { _id: 'AUTH_awesomeLeader'}, 
-        { _id: 'AUTH_awesomeLeader', uid: 'awesomeLeader' }, 
+        { _id: `AUTH_${leaderIdentity}`}, 
+        { _id: `AUTH_${leaderIdentity}`, uid: `${leaderIdentity}` }, 
         {upsert: true}
     )
 
     await db.collection("sessions").update(
-        { _id: 'AUTH_awesomeFollower'}, 
-        { _id: 'AUTH_awesomeFollower', uid: 'awesomeFollower' }, 
+        { _id: `AUTH_${followerIdentity}`}, 
+        { _id: `AUTH_${followerIdentity}`, uid: `${followerIdentity}` }, 
         {upsert: true}
     )
 
@@ -141,6 +141,7 @@ const followerPort     = process.env.FOLLOWER_PORT || 8006
 const leaderDatabase   = process.env.LEADER_DATABASE || "adexValidator" 
 const followerDatabase = process.env.FOLLOWER_DATABASE || "adexValidatorFollower"
 const followerIdentity = process.env.FOLLOWER_IDENTITY || "awesomeFollower"
+const leaderIdentity   = process.env.LEADER_IDENTITY || "awesomeLeader"
 
 module.exports = { 
     post,
@@ -156,4 +157,5 @@ module.exports = {
     leaderDatabase,
     followerDatabase,
     followerIdentity,
+    leaderIdentity,
 }
