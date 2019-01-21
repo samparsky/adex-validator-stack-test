@@ -1,4 +1,4 @@
-Integration test implementation for Adex Validator Network
+# Integration test implementation for Adex Validator Network
 
 ## Configuration
 The following can be overridden via environment variables
