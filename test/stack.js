@@ -11,6 +11,7 @@ const {
     followerPort,
     leaderDatabase,
     followerDatabase,
+    followerIdentity
 } = require('./helper')
 
 const assert = require("assert")
@@ -53,7 +54,7 @@ describe("Validator Stack", () => {
         // check deposit amount
         assert.deepEqual(leaderStatus, followerStatus)
     
-        // sleep for 3 seconds 
+        // sleep for 50 seconds 
         // to allow validateworker to produce state
         await sleep(50000)
     
@@ -68,7 +69,7 @@ describe("Validator Stack", () => {
          // get the last validator message from follower
         let followerMessage = await get(
             followerPort, 
-            `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+            `channel/${channel}/validator-messages/${followerIdentity}/ApproveState`
             )
     
         assert.equal(
@@ -101,7 +102,7 @@ describe("Validator Stack", () => {
         // get the last validator message from follower
         let followerMessage = await get(
             8006, 
-            `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+            `channel/${channel}/validator-messages/${followerIdentity}/ApproveState`
             )
     
         assert.equal(
@@ -119,7 +120,8 @@ describe("Validator Stack", () => {
     
         await sendEvents([leaderPort, followerPort], publisher, channel)
     
-        // allow event to be proccessed
+        // wait till approve state
+        // is produced
         await sleep(50000)
         const stateRoot = "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4"
     
@@ -147,7 +149,7 @@ describe("Validator Stack", () => {
         // should have balance 1
         let followerMessage = await get(
             followerPort, 
-            `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+            `channel/${channel}/validator-messages/${followerIdentity}/ApproveState`
             )
             
         assert.notEqual(
@@ -184,7 +186,7 @@ describe("Validator Stack", () => {
         // get the last validator message from follower
         let followerMessage = await get(
             8006, 
-            `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+            `channel/${channel}/validator-messages/${followerIdentity}/ApproveState`
             )
     
         assert.equal(
@@ -206,7 +208,7 @@ describe("Validator Stack", () => {
         // get the last validator message from follower
         followerMessage = await get(
         8006,
-        `channel/${channel}/validator-messages/awesomeFollower/ApproveState`
+        `channel/${channel}/validator-messages/${followerIdentity}/ApproveState`
         )
     
         assert.equal(

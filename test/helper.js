@@ -140,7 +140,7 @@ const leaderPort       = process.env.LEADER_PORT || 8005
 const followerPort     = process.env.FOLLOWER_PORT || 8006
 const leaderDatabase   = process.env.LEADER_DATABASE || "adexValidator" 
 const followerDatabase = process.env.FOLLOWER_DATABASE || "adexValidatorFollower"
-
+const followerIdentity = process.env.FOLLOWER_IDENTITY || "awesomeFollower"
 
 module.exports = { 
     post,
@@ -155,4 +155,5 @@ module.exports = {
     followerPort,
     leaderDatabase,
     followerDatabase,
+    followerIdentity,
 }
