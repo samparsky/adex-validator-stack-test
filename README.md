@@ -6,6 +6,7 @@ It's important to use `--recursive` when cloning this repo, as `adex-validator-s
 
 ```
 git clone --recursive https://github.com/AdExNetwork/adex-validator-stack-test
+( cd adex-validator-stack-js && npm i )
 ```
 
 ## Configuration
