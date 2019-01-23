@@ -33,6 +33,8 @@ Run tests
 $ npm run test-docker
 ```
 
+
+
 ## RUN TEST (Local machine)
 
 You can create a local validator stack setup with 
