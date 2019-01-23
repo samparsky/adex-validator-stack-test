@@ -11,10 +11,12 @@ const {
     followerPort,
     leaderDatabase,
     followerDatabase,
-    followerIdentity
+    followerIdentity,
+    waitTime
 } = require('./helper')
 
 const assert = require("assert")
+
 
 before( async () => {
     await seedDatabase(leaderDatabase)
@@ -56,7 +58,7 @@ describe("Validator Stack", () => {
     
         // sleep for 50 seconds 
         // to allow validateworker to produce state
-        await sleep(50000)
+        await sleep(waitTime)
     
         const leaderTree   = await get(leaderPort, `channel/${channel}/tree`)
         const followerTree = await get(followerPort, `channel/${channel}/tree`)
@@ -97,7 +99,7 @@ describe("Validator Stack", () => {
         }
 
         // wait till state is produced
-        await sleep(50000)
+        await sleep(waitTime)
     
         // get the last validator message from follower
         let followerMessage = await get(
@@ -122,7 +124,7 @@ describe("Validator Stack", () => {
     
         // wait till approve state
         // is produced
-        await sleep(50000)
+        await sleep(waitTime)
         const stateRoot = "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4"
     
         const invalidState = {
@@ -181,7 +183,7 @@ describe("Validator Stack", () => {
         }
 
         // wait till state is produced
-        await sleep(50000)
+        await sleep(waitTime)
     
         // get the last validator message from follower
         let followerMessage = await get(
@@ -196,6 +198,8 @@ describe("Validator Stack", () => {
         // send new events to both follower & leader setup
         await sendEvents([followerPort, leaderPort], publisher, channel)
 
+        // send event difference to the leader
+        // setup
         i = 5
         while(i != 0){
             await sendEvents([leaderPort], publisher, channel)
@@ -203,7 +207,7 @@ describe("Validator Stack", () => {
         }
 
         // wait till state is produced
-        await sleep(50000)
+        await sleep(waitTime)
 
         // get the last validator message from follower
         followerMessage = await get(
