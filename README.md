@@ -24,9 +24,7 @@ The following can be overridden via environment variables
 Run tests against docker validator stack setup
 Setup Docker
 ```bash
-$ cd adex-validator-stack-js
-$ npm install
-$ cd ../ && docker-compose up
+$ docker-compose up
 ```
 Run tests
 ```bash

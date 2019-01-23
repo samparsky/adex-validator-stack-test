@@ -24,9 +24,7 @@ RUN mkdir -p ~/.ssh && chmod 700 ~/.ssh && echo -e "Host *\n\tStrictHostKeyCheck
 
 EXPOSE ${PORT}
 
-ADD . .
-
-RUN npm install && npm install -g pm2
+RUN npm install -g pm2
 
 RUN git clone https://github.com/AdExNetwork/adex-validator-stack-js.git && \
     cd adex-validator-stack-js/ && npm install
