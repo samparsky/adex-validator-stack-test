@@ -112,7 +112,7 @@ describe("Sentry", () => {
         assert.equal(followerPropagate.status, 401, "Failed to check auth")
 
         const leaderPropagate = await post(
-            followerPort, 
+            leaderPort, 
             `channel/${channel}/validator-messages`, 
             state, 
             "Bearer Fake_AUTH" )
