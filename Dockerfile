@@ -28,6 +28,6 @@ ADD . .
 
 RUN npm install && npm install -g pm2
 
-CMD pm2 start -x bin/validatorWorker.js -- --adapter=${ADAPTER} --dummyIdentity=${IDENTITY} && \
+CMD cd adex-validator-stack-js/ && pm2 start -x bin/validatorWorker.js -- --adapter=${ADAPTER} --dummyIdentity=${IDENTITY} && \
     PORT=${PORT} pm2-docker start bin/sentry.js -- --adapter=${ADAPTER} --dummyIdentity=${IDENTITY}
     

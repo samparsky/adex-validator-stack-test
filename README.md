@@ -26,7 +26,7 @@ Setup Docker
 ```bash
 $ cd adex-validator-stack-js
 $ npm install
-$ docker-compose up
+$ cd ../ && docker-compose up
 ```
 Run tests
 ```bash
