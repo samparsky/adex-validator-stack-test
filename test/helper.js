@@ -31,6 +31,8 @@ async function post(port, url, body, authorization="Bearer x8c9v1b2") {
         method: "POST"
     });
 
+    if(response.status == 401) return response
+
     return response.json()
 }
 

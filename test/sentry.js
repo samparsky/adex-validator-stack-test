@@ -96,4 +96,31 @@ describe("Sentry", () => {
         assert.equal(followerPropagate['success'], true, "Failed to propagate message")
     })
 
+    it("Should reject validator messages with invalid auth", async() =>{
+        const state = {
+            "messages": []
+        }
+
+        // propagate to follower
+        const followerPropagate = await post(
+            followerPort, 
+            `channel/${channel}/validator-messages`, 
+            state, 
+            "Bearer Fake_AUTH" )
+
+        console.log({followerPropagate})
+    
+        assert.equal(followerPropagate.status, 401, "Failed to check auth")
+
+        const leaderPropagate = await post(
+            followerPort, 
+            `channel/${channel}/validator-messages`, 
+            state, 
+            "Bearer Fake_AUTH" )
+        
+            console.log({leaderPropagate})
+
+        assert.equal(leaderPropagate.status, 401, "Failed to check auth")
+    })
+
 })
