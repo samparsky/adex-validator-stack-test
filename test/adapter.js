@@ -1,6 +1,6 @@
 const { readFileSync }  = require('fs')
 const assert = require("assert")
-const { ethereum: ethereumAdapter } = require("../adex-validator-stack-js/adapters");
+const { ethereum: ethereumAdapter } = require(`${process.cwd()}/adapters`);
 
 
 describe("Ethereum Adapter", () => {
