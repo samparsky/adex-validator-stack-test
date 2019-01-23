@@ -14,6 +14,7 @@ const assert = require("assert")
 
 
 let channel = randString()
+
 before(async () => {
     await seedDatabase(leaderDatabase)
     await seedDatabase(followerDatabase)
@@ -77,7 +78,7 @@ describe("Sentry", () => {
                 { 
                 "type" : "NewState", 
                 "balances" : { 
-                    "a1" : "5000"
+                    "a1" : "1"
                 }, 
                 "lastEvAggr": "2019-01-16T08:48:01.547Z", 
                 "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
@@ -107,8 +108,6 @@ describe("Sentry", () => {
             `channel/${channel}/validator-messages`, 
             state, 
             "Bearer Fake_AUTH" )
-
-        console.log({followerPropagate})
     
         assert.equal(followerPropagate.status, 401, "Failed to check auth")
 
@@ -118,8 +117,6 @@ describe("Sentry", () => {
             state, 
             "Bearer Fake_AUTH" )
         
-            console.log({leaderPropagate})
-
         assert.equal(leaderPropagate.status, 401, "Failed to check auth")
     })
 

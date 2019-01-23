@@ -19,8 +19,8 @@ const assert = require("assert")
 
 
 before( async () => {
-    await seedDatabase(leaderDatabase)
-    await seedDatabase(followerDatabase)
+    // await seedDatabase(leaderDatabase)
+    // await seedDatabase(followerDatabase)
 })
 
 after( async () => {
@@ -73,10 +73,10 @@ describe("Validator Stack", () => {
             followerPort, 
             `channel/${channel}/validator-messages/${followerIdentity}/ApproveState`
             )
-    
+        
         assert.equal(
-            followerMessage['messages'][0]['msg']['health'], 
-            "HEALTHY", "Mark channel unhealthy" )
+            followerMessage['validatorMessages'][0]['msg']['isHealthy'], 
+            true, "Should mark channel healthy" )
         
     })
     
@@ -108,8 +108,8 @@ describe("Validator Stack", () => {
             )
     
         assert.equal(
-            followerMessage['messages'][0]['msg']['health'], 
-            "UNHEALTHY", "Mark channel unhealthy" )
+            followerMessage['validatorMessages'][0]['msg']['isHealthy'], 
+            false, "Mark channel unhealthy" )
     })
     
     it("Leader sends an invalid type of state, follower should reject", async() => {
@@ -155,7 +155,7 @@ describe("Validator Stack", () => {
             )
             
         assert.notEqual(
-            followerMessage['messages'][0]['msg']['stateRoot'], 
+            followerMessage['validatorMessages'][0]['msg']['stateRoot'], 
             stateRoot, 
             "Should ignore invalid state transition"
         )
@@ -192,8 +192,8 @@ describe("Validator Stack", () => {
             )
     
         assert.equal(
-            followerMessage['messages'][0]['msg']['health'], 
-            "UNHEALTHY", "Mark channel unhealthy" )
+            followerMessage['validatorMessages'][0]['msg']['isHealthy'], 
+            false, "Mark channel unhealthy" )
         
         // send new events to both follower & leader setup
         await sendEvents([followerPort, leaderPort], publisher, channel)
@@ -216,12 +216,9 @@ describe("Validator Stack", () => {
         )
     
         assert.equal(
-            followerMessage['messages'][0]['msg']['health'], 
-            "HEALTHY", "Mark channel healthy" )
-
+            followerMessage['validatorMessages'][0]['msg']['isHealthy'], 
+            true, "Mark channel healthy" )
 
     })
-    
-
 
 })
