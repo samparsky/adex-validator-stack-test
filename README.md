@@ -1,5 +1,14 @@
 # Integration test implementation for Adex Validator Network
 
+## Clone
+
+It's important to use `--recursive` when cloning this repo, as `adex-validator-stack-js` is included as a submodule
+
+```
+git clone --recursive https://github.com/AdExNetwork/adex-validator-stack-test
+( cd adex-validator-stack-js && npm i )
+```
+
 ## Configuration
 The following can be overridden via environment variables
 - MONGODB_URL (for docker default =(MONGODB_URL=mongodb://localhost:28000))
