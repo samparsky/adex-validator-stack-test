@@ -79,7 +79,11 @@ describe("Sentry", () => {
                 "type" : "NewState", 
                 "balances" : { 
                     "a1" : "1"
-                }, 
+                },
+                "balancesAfterFees": {
+                    "a1":"4800",
+                    "validator":"10"
+                },
                 "lastEvAggr": "2019-01-16T08:48:01.547Z", 
                 "stateRoot" : "cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4", 
                 "signature" : "Dummy adapter signature for cd82fa3b9a6a0c00f3649bba9b3d90c95f970b2f7cdad8c93e16571297f1a0f4 by awesomeLeader" 

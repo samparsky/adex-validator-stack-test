@@ -92,8 +92,8 @@ async function seedChannel(id, channel="awesomeTestChannel") {
         validators: [`${leaderIdentity}`, `${followerIdentity}`],
         spec: {
             validators: [
-                { id: `${leaderIdentity}`, url: `http://${uri}:${leaderPort}` },
-                { id: `${followerIdentity}`, url: `http://${uri}:${followerPort}` },
+                { id: `${leaderIdentity}`, url: `http://${uri}:${leaderPort}`, fee: '100' },
+                { id: `${followerIdentity}`, url: `http://${uri}:${followerPort}`, fee: '100' },
             ]
         }
     })
