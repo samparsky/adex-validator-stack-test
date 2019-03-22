@@ -1,10 +1,19 @@
 const fetch = require("node-fetch");
 const { MongoClient } = require('mongodb')
+const childproc = require('child_process')
 
 let mongoClient = null
 
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+function exec(cmd) {
+	return new Promise((resolve, reject) => {
+		const proc = childproc.exec(cmd, err => (err ? reject(err) : resolve()))
+		proc.stdout.pipe(process.stdout)
+		proc.stderr.pipe(process.stderr)
+	})
 }
 
 async function get(port, url) {
@@ -92,8 +101,8 @@ async function seedChannel(id, channel="awesomeTestChannel") {
         validators: [`${leaderIdentity}`, `${followerIdentity}`],
         spec: {
             validators: [
-                { id: `${leaderIdentity}`, url: `http://${uri}:${leaderPort}` },
-                { id: `${followerIdentity}`, url: `http://${uri}:${followerPort}` },
+                { id: `${leaderIdentity}`, url: `http://${uri}:${leaderPort}`, fee: '100' },
+                { id: `${followerIdentity}`, url: `http://${uri}:${followerPort}`, fee: '100' },
             ]
         }
     })
@@ -137,6 +146,31 @@ async function seedDatabase(id){
     return mongoClient;
 }
 
+function aggrAndTick() {
+	// If we need to run the production config with AGGR_THROTTLE, then we need to wait for cfg.AGGR_THROTTLE + 500
+	// the reason is that in production we have a throttle for saving event aggregates
+	if (process.env.NODE_ENV === 'production') {
+		return sleep(1500).then(forceTick)
+	}
+	return forceTick()
+}
+
+function forceTick() {
+	return Promise.all([
+		exec(
+			`DB_MONGO_NAME=${
+				process.env.LEADER_DATABASE
+			} ${process.cwd()}/../../bin/validatorWorker.js --single-tick --adapter=dummy --dummyIdentity=awesomeLeader`
+		),
+		exec(
+			`DB_MONGO_NAME=${
+				process.env.FOLLOWER_DATABASE
+			} ${process.cwd()}/../../bin/validatorWorker.js --single-tick --adapter=dummy --dummyIdentity=awesomeFollower`
+		)
+	])
+}
+
+
 const randString       = () => Math.random().toString(36).substring(2, 15) 
 const leaderPort       = process.env.LEADER_PORT || 8005
 const followerPort     = process.env.FOLLOWER_PORT || 8006
@@ -144,7 +178,7 @@ const leaderDatabase   = process.env.LEADER_DATABASE || "adexValidator"
 const followerDatabase = process.env.FOLLOWER_DATABASE || "adexValidatorFollower"
 const followerIdentity = process.env.FOLLOWER_IDENTITY || "awesomeFollower"
 const leaderIdentity   = process.env.LEADER_IDENTITY || "awesomeLeader"
-const waitTime         = process.env.WAIT_TIME || 11000
+const waitTime         = process.env.WAIT_TIME || 13000
 
 module.exports = { 
     post,
@@ -161,5 +195,7 @@ module.exports = {
     followerDatabase,
     followerIdentity,
     leaderIdentity,
-    waitTime
+    waitTime,
+    aggrAndTick,
+    forceTick,
 }
