@@ -144,7 +144,7 @@ const leaderDatabase   = process.env.LEADER_DATABASE || "adexValidator"
 const followerDatabase = process.env.FOLLOWER_DATABASE || "adexValidatorFollower"
 const followerIdentity = process.env.FOLLOWER_IDENTITY || "awesomeFollower"
 const leaderIdentity   = process.env.LEADER_IDENTITY || "awesomeLeader"
-const waitTime         = process.env.WAIT_TIME || 11000
+const waitTime         = process.env.WAIT_TIME || 13000
 
 module.exports = { 
     post,
